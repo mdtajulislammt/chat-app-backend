@@ -14,33 +14,41 @@ datasource db {
 }
 
 model User {
-  id         Int       @id @default(autoincrement())
-  username   String    @unique
-  password   String
-  avatar     String?   // optional user profile image
-  status     String?   // optional: "online" / "offline"
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  fullName  String?
+  email     String   @unique
+  password  String
+  avatar    String?
+  status    String?  // optional: "online" / "offline"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  // Relations
+    // Relations
   sentMessages     Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")
 }
 
 model Message {
-  id         Int      @id @default(autoincrement())
+  id         Int            @id @default(autoincrement())
   content    String
-  status     String   @default("sent") // "sent", "delivered", "read"
-  roomId     String?  // for group chats
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  type       MessageType     @default(TEXT)
+  status     MessageStatus   @default(SENT)
+  createdAt  DateTime        @default(now())
 
-  // Relations
   senderId   Int
-  sender     User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
-  
-  receiverId Int?
-  receiver   User?    @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  receiverId Int
+  sender     User            @relation("SentMessages", fields: [senderId], references: [id])
+  receiver   User            @relation("ReceivedMessages", fields: [receiverId], references: [id])
 }
 
+enum MessageType {
+  TEXT
+  NUMBER
+}
 
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+}
