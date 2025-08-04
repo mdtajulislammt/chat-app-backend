@@ -1,98 +1,162 @@
+# Chat App Backend
+
 <p align="center">
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
-
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
+<p align="center">
+  <strong>Real-time Chat Application Backend</strong><br>
+  Built with NestJS, Socket.IO, and PostgreSQL
 </p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-## Description
+## 🚀 Features
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- **Real-time messaging** with Socket.IO
+- **JWT-based authentication**
+- **Message status tracking** (SENT → DELIVERED → READ)
+- **Push notifications** for new messages
+- **User management** with profiles
+- **PostgreSQL database** with Prisma ORM
+- **RESTful API** for all operations
+- **WebSocket events** for real-time communication
 
-## Project setup
+## 📚 Documentation
 
+- **[Quick Start Guide](QUICK_START.md)** - Get up and running in 5 minutes
+- **[Full Documentation](DOCUMENTATION.md)** - Comprehensive guide
+- **[API Reference](API_REFERENCE.md)** - Detailed API documentation
+
+## 🛠️ Tech Stack
+
+- **Framework**: NestJS (Node.js)
+- **Database**: PostgreSQL
+- **ORM**: Prisma
+- **Real-time**: Socket.IO
+- **Authentication**: JWT + Passport
+- **Password Hashing**: bcrypt
+- **Validation**: class-validator
+- **Language**: TypeScript
+
+## 🏃‍♂️ Quick Start
+
+### Prerequisites
+- Node.js (v16 or higher)
+- PostgreSQL database
+- npm or yarn
+
+### Installation
 ```bash
-$ npm install
+# Clone the repository
+git clone <repository-url>
+cd chat-app-backend
+
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your database credentials
+
+# Set up database
+npx prisma generate
+npx prisma migrate dev
+
+# Start development server
+npm run start:dev
 ```
 
-## Compile and run the project
+🎉 **Server is running at http://localhost:3000**
 
-```bash
-# development
-$ npm run start
+## 📖 API Overview
 
-# watch mode
-$ npm run start:dev
+### Authentication
+- `POST /auth/register` - Register new user
+- `POST /auth/login` - Login user
 
-# production mode
-$ npm run start:prod
+### Users
+- `GET /users/me` - Get current user profile
+
+### Messages
+- `GET /messages/history` - Get message history
+- `POST /messages/send` - Send message
+
+### Notifications
+- `GET /notifications` - Get user notifications
+- `PATCH /notifications/:id/read` - Mark notification as read
+
+## 🔌 WebSocket Events
+
+| Event | Direction | Description |
+|-------|-----------|-------------|
+| `auth` | Client → Server | Authenticate socket |
+| `send_message` | Client → Server | Send real-time message |
+| `receive_message` | Server → Client | Receive new message |
+| `message_status` | Server → Client | Message status update |
+| `notification` | Server → Client | Push notification |
+
+## 🗂️ Project Structure
+
+```
+src/
+├── auth/          # Authentication & JWT
+├── chat/          # WebSocket gateway
+├── message/       # Message CRUD
+├── notification/  # Push notifications
+├── users/         # User management
+└── prisma/        # Database service
 ```
 
-## Run tests
+## 🧪 Testing
 
 ```bash
-# unit tests
-$ npm run test
+# Unit tests
+npm run test
 
-# e2e tests
-$ npm run test:e2e
+# E2E tests
+npm run test:e2e
 
-# test coverage
-$ npm run test:cov
+# Test coverage
+npm run test:cov
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## 🚀 Deployment
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+# Production build
+npm run build
+
+# Start production server
+npm run start:prod
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## 📝 Environment Variables
 
-## Resources
+Create a `.env` file:
+```env
+DATABASE_URL="postgresql://username:password@localhost:5432/chat_app"
+JWT_SECRET="your-super-secret-jwt-key"
+PORT=3000
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+## 🤝 Contributing
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests
+5. Submit a pull request
 
-## Support
+## 📄 License
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+This project is licensed under the MIT License.
 
-## Stay in touch
+## 🆘 Support
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+- 📖 **Documentation**: [DOCUMENTATION.md](DOCUMENTATION.md)
+- 🔌 **API Reference**: [API_REFERENCE.md](API_REFERENCE.md)
+- ⚡ **Quick Start**: [QUICK_START.md](QUICK_START.md)
+- 🐛 **Issues**: Create an issue in the repository
 
-## License
+---
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+**Built with ❤️ using NestJS**

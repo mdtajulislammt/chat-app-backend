@@ -20,27 +20,41 @@ model User {
   email     String   @unique
   password  String
   avatar    String?
-  status    String?  // optional: "online" / "offline"
+  status    String? // optional: "online" / "offline"
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-    // Relations
-  sentMessages     Message[] @relation("SentMessages")
-  receivedMessages Message[] @relation("ReceivedMessages")
+  // Relations
+  sentMessages     Message[]      @relation("SentMessages")
+  receivedMessages Message[]      @relation("ReceivedMessages")
+  Notification     Notification[]
 }
 
 model Message {
-  id         Int            @id @default(autoincrement())
-  content    String
-  type       MessageType     @default(TEXT)
-  status     MessageStatus   @default(SENT)
-  createdAt  DateTime        @default(now())
+  id        Int           @id @default(autoincrement())
+  content   String
+  type      MessageType   @default(TEXT)
+  status    MessageStatus @default(SENT)
+  createdAt DateTime      @default(now())
 
   senderId   Int
   receiverId Int
-  sender     User            @relation("SentMessages", fields: [senderId], references: [id])
-  receiver   User            @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  sender     User @relation("SentMessages", fields: [senderId], references: [id])
+  receiver   User @relation("ReceivedMessages", fields: [receiverId], references: [id])
 }
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  // Relation
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+}
+
 
 enum MessageType {
   TEXT
