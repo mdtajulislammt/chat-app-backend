@@ -5,6 +5,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { PrismaService } from '../prisma/prisma.service';
+import { MailModule } from 'src/mail/mail.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { PrismaService } from '../prisma/prisma.service';
       secret: process.env.JWT_SECRET as string || 'YOUR_SECRET_KEY', // Move to ENV in production
       signOptions: { expiresIn: '1d' },
     }),
+    MailModule,
   ],
   providers: [AuthService, JwtStrategy, PrismaService],
   controllers: [AuthController],

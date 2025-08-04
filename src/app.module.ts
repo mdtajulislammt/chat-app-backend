@@ -10,6 +10,9 @@ import { MessageController } from './message/message.controller';
 import { MessageModule } from './message/message.module';
 import { NotificationModule } from './notification/notification.module';
 import { NotificationController } from './notification/notification.controller';
+import { RolesGuard } from './auth/roles.guard';
+import { APP_GUARD } from '@nestjs/core';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -21,8 +24,16 @@ import { NotificationController } from './notification/notification.controller';
     ChatModule,
     MessageModule,
     NotificationModule,
+    MailModule,
   ],
-  controllers: [AppController,MessageController,NotificationController],
-  providers: [AppService, PrismaService],
+  controllers: [AppController, MessageController, NotificationController],
+  providers: [
+    AppService,
+    PrismaService,
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
+  ],
 })
 export class AppModule {}

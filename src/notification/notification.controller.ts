@@ -3,12 +3,14 @@ import { NotificationService } from './notification.service';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { MessageService } from 'src/message/message.service';
 import { ChatGateway } from 'src/chat/chat.gateway';
+import { RolesGuard } from 'src/auth/roles.guard';
 
 interface RequestWithUser extends Request {
   user?: { userId: number; username?: string };
 }
 
 @Controller('notifications')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class NotificationController {
   constructor(
     private readonly notificationService: NotificationService,
@@ -17,7 +19,7 @@ export class NotificationController {
   ) {}
 
   // 1️⃣ Get all notifications for logged-in user
-  @UseGuards(JwtAuthGuard)
+
   @Get()
   async getMyNotifications(@Req() req: RequestWithUser) {
     const userId = req.user?.userId;
@@ -27,25 +29,20 @@ export class NotificationController {
     return { success: true, notifications };
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get('all')
   async getAllNotifications() {
     const notifications = await this.notificationService.getAllNotifications();
     return { success: true, notifications };
   }
 
+  @Get('user/:id')
+  async getNotificationsByUser(@Param('id') id: string) {
+    const userId = parseInt(id, 10);
+    const notifications =
+      await this.notificationService.getNotificationsByUserId(userId);
+    return { success: true, notifications };
+  }
 
-@UseGuards(JwtAuthGuard)
-@Get('user/:id')
-async getNotificationsByUser(@Param('id') id: string) {
-  const userId = parseInt(id, 10);
-  const notifications = await this.notificationService.getNotificationsByUserId(userId);
-  return { success: true, notifications };
-}
-
-
-
-  @UseGuards(JwtAuthGuard)
   @Patch(':id/read')
   async markAsRead(@Param('id') id: string) {
     const notificationId = parseInt(id);
@@ -53,5 +50,3 @@ async getNotificationsByUser(@Param('id') id: string) {
     return { success: true, notification: updated };
   }
 }
-
-
