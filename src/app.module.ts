@@ -13,6 +13,7 @@ import { NotificationController } from './notification/notification.controller';
 import { RolesGuard } from './auth/roles.guard';
 import { APP_GUARD } from '@nestjs/core';
 import { MailModule } from './mail/mail.module';
+import { PresenceModule } from './presence/presence.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { MailModule } from './mail/mail.module';
     MessageModule,
     NotificationModule,
     MailModule,
+    PresenceModule,
   ],
   controllers: [AppController, MessageController, NotificationController],
   providers: [

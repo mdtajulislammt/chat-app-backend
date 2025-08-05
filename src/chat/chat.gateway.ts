@@ -1,14 +1,20 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable prettier/prettier */
+/* eslint-disable @typescript-eslint/no-floating-promises */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import {
   WebSocketGateway,
   WebSocketServer,
   SubscribeMessage,
   ConnectedSocket,
   MessageBody,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  OnGatewayInit,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import * as jwt from 'jsonwebtoken';
 import * as dotenv from 'dotenv';
-import { Inject } from '@nestjs/common';
 import { MessageService } from 'src/message/message.service';
 import { MessageStatus } from '@prisma/client';
 import { NotificationService } from 'src/notification/notification.service';
@@ -22,11 +28,14 @@ interface JwtPayload {
 }
 
 @WebSocketGateway({ cors: { origin: '*' } })
-export class ChatGateway {
+export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
 
   private connectedUsers = new Map<string, number>();
   private readonly JWT_SECRET = process.env.JWT_SECRET || 'chatappmt';
+
+  // Retry Queue for undelivered messages
+  private retryQueue: { receiverId: number; message: any }[] = [];
 
   constructor(
     private readonly messageService: MessageService,
@@ -38,7 +47,7 @@ export class ChatGateway {
     return this.connectedUsers.get(socketId);
   }
 
-  /** 🔹 Notify a user with a custom event */
+  /** Notify a user with a custom event */
   notifyUser(userId: number, data: any) {
     this.server.sockets.sockets.forEach((socket) => {
       const uid = this.getUserIdBySocket(socket.id);
@@ -48,20 +57,41 @@ export class ChatGateway {
     });
   }
 
-  // 1️⃣ CONNECT / DISCONNECT
+  //  CONNECT / DISCONNECT
   handleConnection(client: Socket) {
     console.log(`Client connected: ${client.id}`);
   }
 
   handleDisconnect(client: Socket) {
-    console.log(`Client disconnected: ${client.id}`);
+    console.log(` Client disconnected: ${client.id}`);
     this.connectedUsers.delete(client.id);
   }
 
-  // 2️⃣ AUTHENTICATE SOCKET
+  //  Retry delivery when a user reconnects
+  afterInit() {
+    console.log(' WebSocket Gateway Initialized');
+  }
+
+  @SubscribeMessage('retry_pending')
+  handleRetry(@ConnectedSocket() client: Socket) {
+    const userId = this.connectedUsers.get(client.id);
+    if (!userId) return;
+
+    const pendingMessages = this.retryQueue.filter((m) => m.receiverId === userId);
+    if (pendingMessages.length > 0) {
+      pendingMessages.forEach((msg) => {
+        client.emit('receive_message', msg.message);
+      });
+
+      // Remove from queue after delivery
+      this.retryQueue = this.retryQueue.filter((m) => m.receiverId !== userId);
+    }
+  }
+
+  // 2 AUTHENTICATE SOCKET
   @SubscribeMessage('auth')
   handleAuth(@ConnectedSocket() client: Socket, @MessageBody() data: any) {
-    const token = data?.token;
+    const token = data?.token as string;
     if (!token) {
       return client.emit('auth_failed', { message: 'Token missing' });
     }
@@ -77,16 +107,23 @@ export class ChatGateway {
       this.connectedUsers.set(client.id, decoded.sub);
 
       console.log(
-        `✅ Authenticated ${decoded.username ?? 'User'} on socket ${client.id}`,
+        ` Authenticated ${decoded.username ?? 'User'} on socket ${client.id}`,
       );
       client.emit('auth_success', { userId: decoded.sub });
-    } catch (err: any) {
-      console.error(`❌ JWT Error: ${err.message}`);
+
+      // 🔹 ADDED: Deliver any pending messages after auth
+      this.handleRetry(client);
+
+    } catch (err: unknown) {
+      console.error(
+        `❌ JWT Error: ${err instanceof Error ? err.message : 'Unknown error'}`,
+      );
       client.emit('auth_failed', { message: 'Invalid or expired token' });
       client.disconnect();
     }
   }
-  // 3️⃣ SEND MESSAGE EVENT
+
+  //  SEND MESSAGE EVENT
   @SubscribeMessage('send_message')
   async handleMessage(
     @ConnectedSocket() client: Socket,
@@ -97,9 +134,12 @@ export class ChatGateway {
       return client.emit('error', { message: 'Not authenticated' });
     }
 
-    const { receiverId, content } = data;
+    const { receiverId, content } = data as {
+      receiverId: number;
+      content: string;
+    };
 
-    // 1️⃣ Save message to DB as SENT
+    //  Save message to DB as SENT
     const savedMessage = await this.messageService.saveMessage(
       senderId,
       receiverId,
@@ -111,52 +151,61 @@ export class ChatGateway {
       const userId = this.connectedUsers.get(socket.id);
       if (userId === receiverId) {
         delivered = true;
-      
-        socket.emit('receive_message', { ...savedMessage, status: 'DELIVERED' });
+
+        socket.emit('receive_message', {
+          ...savedMessage,
+          status: 'DELIVERED',
+        });
         socket.emit('notification', {
           title: 'New Message',
           from: senderId,
           content: savedMessage.content,
         });
-      
-        // ✅ Save notification to DB (awaited)
-         this.notificationService.createNotification(
+
+        //  Save notification to DB (awaited)
+        void this.notificationService.createNotification(
           receiverId,
           'New Message',
           savedMessage.content,
         );
-      
-         this.messageService.updateMessageStatus(
+
+        this.messageService.updateMessageStatus(
           savedMessage.id,
           MessageStatus.DELIVERED,
         );
       }
-      
     });
 
-    // ✅ NEW: If receiver is offline, still save notification
+    // NEW: If receiver is offline, still save notification
     if (!delivered) {
       await this.notificationService.createNotification(
         receiverId,
         'New Message',
         savedMessage.content,
       );
+
+      // Add message to retry queue
+      this.retryQueue.push({ receiverId, message: savedMessage });
+      console.log(` Queued message for ${receiverId}`);
     }
 
-    // 3️⃣ Emit back to Sender (Existing)
+    //  Emit back to Sender (Existing)
     client.emit('message_status', {
       ...savedMessage,
       status: delivered ? 'DELIVERED' : 'SENT',
     });
   }
 
-  // 4️⃣ READ RECEIPT EVENT
+  //  READ RECEIPT EVENT
   @SubscribeMessage('read_message')
   async handleReadMessage(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: any,
   ) {
-    const { messageId, senderId } = data;
+    const { messageId, senderId } = data as {
+      messageId: number;
+      senderId: number;
+    };
 
     // Update DB to READ
     const updated = await this.messageService.updateMessageStatus(

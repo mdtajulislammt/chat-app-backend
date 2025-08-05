@@ -62,12 +62,62 @@ export class AuthService {
   
     const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
   
-    // ✅ Send email (using Mailtrap)
+    // Send email (using Mailtrap)
     await this.mailService.sendMail(
       email,
-      'Password Reset Request',
-      `<p>Click <a href="${resetLink}">here</a> to reset your password. Link expires in 15 mins.</p>`
+      '🔐 Password Reset Request',
+      `
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7fc; padding: 40px 0;">
+        <table align="center" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+          <tr>
+            <td style="background: linear-gradient(90deg, #4CAF50, #2E7D32); color: white; text-align: center; padding: 30px 20px;">
+              <h1 style="margin: 0; font-size: 24px;">Password Reset Request</h1>
+            </td>
+          </tr>
+    
+          <tr>
+            <td style="padding: 30px 40px; color: #333;">
+              <p style="font-size: 16px; margin-bottom: 20px;">
+                Hello,
+              </p>
+              <p style="font-size: 15px; line-height: 1.6; margin-bottom: 30px;">
+                We received a request to reset your password for your <strong>ChatApp</strong> account.  
+                Click the button below to securely set a new password:
+              </p>
+    
+              <div style="text-align: center; margin-bottom: 40px;">
+                <a href="${resetLink}" style="
+                  background: linear-gradient(90deg, #4CAF50, #2E7D32);
+                  color: white;
+                  padding: 14px 28px;
+                  text-decoration: none;
+                  border-radius: 50px;
+                  font-weight: 600;
+                  font-size: 16px;
+                  display: inline-block;
+                  box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);
+                  transition: 0.3s ease;
+                ">Reset Password</a>
+              </div>
+    
+              <p style="font-size: 14px; color: #555; margin-bottom: 10px;">
+                This link will expire in <strong>15 minutes</strong>.  
+                If you didn’t request this, please ignore this email.
+              </p>
+            </td>
+          </tr>
+    
+          <tr>
+            <td style="background-color: #f4f7fc; text-align: center; padding: 20px; font-size: 12px; color: #999;">
+              &copy; ${new Date().getFullYear()} <strong>ChatApp</strong>. All rights reserved.<br>
+              Sent securely with ❤️ from ChatApp
+            </td>
+          </tr>
+        </table>
+      </div>
+      `
     );
+    
   
     return { success: true, message: 'Password reset link sent to your email' };
   }
